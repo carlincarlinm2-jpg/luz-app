@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Luz Diaria</title>
+<meta name="description" content="Una oración corta cada mañana y cada noche para pedir motivación, fuerza, salud y abundancia.">
+<meta name="theme-color" content="#120f2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Luz Diaria">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,500;0,600;0,700;1,500&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+/* Una columna tipo devocionario sobre un cielo animado a pantalla completa */
+:root{
+  --ink:#fffaf2; --soft:rgba(255,248,236,.78); --faint:rgba(255,248,236,.5);
+  --glass:rgba(18,14,42,.38); --glass2:rgba(18,14,42,.6); --line:rgba(255,248,236,.18);
+  --gold:#ffd27a; --goldInk:#2a1c05; --ok:#9be3b5;
+  --display:"Cormorant Infant",Georgia,serif; --body:"Nunito Sans",system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#120f2e;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+.veil{position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,0) 30%,rgba(0,0,0,.25));pointer-events:none}
+main{position:relative;z-index:2;max-width:560px;margin:0 auto;padding-inline:16px;padding-block:calc(18px + env(safe-area-inset-top,0px)) calc(60px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px}
+button{font-family:var(--body);color:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.date{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--soft);margin-top:4px}
+.icons{display:flex;gap:8px}
+.ib{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:grid;place-items:center;cursor:pointer;padding:0}
+.ib svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ib.dot{position:relative}.ib.dot::after{content:"";position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.hero{text-align:center;padding-top:14px}
+.hero h1{font-family:var(--display);font-weight:600;font-size:clamp(2.3rem,9vw,3.1rem);line-height:1.05;margin:0;text-wrap:balance;text-shadow:0 2px 20px rgba(0,0,0,.35)}
+.hero p{margin:6px 0 0;color:var(--soft);text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.seg{display:flex;align-self:center;background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:4px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.seg button{border:0;background:none;color:var(--soft);font-weight:700;font-size:.88rem;padding:9px 20px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#1b1640}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:999px;padding:8px 15px;font-size:.86rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--gold);color:var(--goldInk);border-color:var(--gold)}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:26px;padding:26px 22px;backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);box-shadow:0 20px 50px -20px rgba(0,0,0,.45)}
+.tag{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:var(--gold)}
+.card h2{font-family:var(--display);font-size:1.85rem;font-weight:700;margin:6px 0 14px;line-height:1.12;text-wrap:balance}
+.prayer{font-family:var(--display);font-size:1.38rem;line-height:1.5;font-weight:500}
+.prayer span{display:block;opacity:0;transform:translateY(6px);animation:in .7s ease forwards}
+@keyframes in{to{opacity:1;transform:none}}
+.amen{font-family:var(--display);font-style:italic;font-size:1.35rem;color:var(--gold);margin-top:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;align-items:center}
+.btn{border:0;border-radius:999px;padding:12px 20px;font-weight:800;font-size:.92rem;cursor:pointer;background:var(--gold);color:var(--goldInk)}
+.btn.done{background:var(--ok);color:#0f2a1a}
+.btn.ghost{background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.6}
+.mini{display:flex;gap:8px;margin-left:auto}
+.mini .ib{width:40px;height:40px}
+.mini .ib[aria-pressed="true"] svg{fill:var(--gold);stroke:var(--gold)}
+.affirm{text-align:center;padding:4px 10px}
+.affirm small{display:block;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}
+.affirm q{font-family:var(--display);font-size:1.45rem;font-style:italic;quotes:"“" "”";text-shadow:0 1px 10px rgba(0,0,0,.4)}
+.sec h3{font-family:var(--display);font-size:1.4rem;font-weight:700;margin:0 0 4px}
+.sec .hint{font-size:.85rem;color:var(--soft);margin:0 0 14px}
+.ints{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.int{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 14px;font-size:.88rem;font-weight:600}
+.int button{border:0;background:rgba(255,255,255,.12);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:.8rem;line-height:1}
+.add{display:flex;gap:8px}
+.add input,.field input{flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--ink);font:600 .95rem var(--body)}
+.add input::placeholder{color:var(--faint)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.week div{font-size:.68rem;color:var(--soft);font-weight:700;text-transform:uppercase}
+.week i{display:flex;gap:3px;justify-content:center;margin-top:6px}
+.week i b{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.15)}
+.week i b.on{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.week .today{color:var(--ink)}
+.stat{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.stat strong{font-family:var(--display);font-size:2.2rem;line-height:1;font-variant-numeric:tabular-nums}
+.saved{display:flex;flex-direction:column;gap:10px}
+.saved details{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.saved summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.saved summary::-webkit-details-marker{display:none}
+.saved p{font-family:var(--display);font-size:1.15rem;white-space:pre-line;margin:10px 0 6px}
+.linkb{border:0;background:none;color:var(--gold);font-weight:700;cursor:pointer;padding:0;font-size:.85rem}
+.empty{font-size:.88rem;color:var(--soft)}
+.banner{display:flex;gap:12px;align-items:center;background:var(--glass2);border:1px solid var(--gold);border-radius:20px;padding:14px 16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.banner p{margin:0;font-size:.9rem;flex:1}
+.banner b{display:block;font-size:.95rem}
+/* hojas */
+.ov{position:fixed;inset:0;z-index:20;background:rgba(5,3,20,.55);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.ov.open{opacity:1;pointer-events:auto}
+.sheet{width:100%;max-width:560px;max-height:88vh;overflow:auto;background:#1b1640;border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;padding:22px 20px calc(28px + env(safe-area-inset-bottom,0px));transform:translateY(30px);transition:transform .3s}
+.ov.open .sheet{transform:none}
+.sheet h3{font-family:var(--display);font-size:1.7rem;margin:0 0 4px}
+.sheet .hint{color:var(--soft);font-size:.88rem;margin:0 0 16px}
+.grab{width:40px;height:5px;border-radius:5px;background:var(--line);margin:-8px auto 14px}
+.bgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.bg{border:2px solid transparent;border-radius:18px;padding:0;overflow:hidden;cursor:pointer;background:#000;text-align:left}
+.bg canvas{display:block;width:100%;aspect-ratio:4/3}
+.bg span{display:block;padding:8px 12px;font-weight:700;font-size:.88rem;background:#241d52}
+.bg[aria-pressed="true"]{border-color:var(--gold)}
+.set{display:flex;flex-direction:column;gap:12px}
+.field{display:flex;justify-content:space-between;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.field label{font-weight:700}
+.field small{display:block;color:var(--soft);font-weight:400;font-size:.8rem}
+.field input[type=time]{flex:none;width:auto;padding:8px 10px}
+.toggle{width:52px;height:30px;border-radius:30px;border:0;background:rgba(255,255,255,.2);position:relative;cursor:pointer;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle[aria-checked="true"]{background:var(--gold)}.toggle[aria-checked="true"]::after{left:25px}
+.err{color:#ffb4a8;font-size:.88rem;min-height:1.2em}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:30;background:var(--ink);color:#1b1640;padding:11px 20px;border-radius:999px;font-weight:700;font-size:.9rem;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.auth .field{flex-direction:column;align-items:stretch;gap:6px}
+.auth .field input{width:100%}
+.steps{margin:0;padding-left:20px;color:var(--soft);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){.prayer span{animation:none;opacity:1;transform:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="veil"></div>
+
+<main>
+  <div class="top">
+    <div><div class="brand">Luz Diaria</div><div class="date" id="date"></div></div>
+    <div class="icons">
+      <button class="ib" id="bgBtn" aria-label="Cambiar fondo"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.5 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></button>
+      <button class="ib" id="setBtn" aria-label="Avisos y ajustes"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></button>
+    </div>
+  </div>
+
+  <div class="hero"><h1 id="greet"></h1><p id="sub"></p></div>
+
+  <div class="seg" role="group" aria-label="Momento del día">
+    <button id="bM" aria-pressed="true">Mañana</button>
+    <button id="bN" aria-pressed="false">Noche</button>
+  </div>
+
+  <div class="chips" id="chips" role="group" aria-label="Tema de la oración"></div>
+
+  <article class="card" aria-live="polite">
+    <div class="tag" id="tag"></div>
+    <h2 id="title"></h2>
+    <div class="prayer" id="text"></div>
+    <div class="amen">Amén.</div>
+    <div class="row">
+      <button class="btn" id="done">Ya la recé</button>
+      <button class="btn ghost" id="other">Otra</button>
+      <div class="mini">
+        <button class="ib" id="speak" aria-label="Escuchar oración"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+        <button class="ib" id="fav" aria-label="Guardar oración" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.3-9A5.2 5.2 0 0 1 12 6.3 5.2 5.2 0 0 1 21.3 12C19 16.5 12 21 12 21z"/></svg></button>
+        <button class="ib" id="copy" aria-label="Copiar oración"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+      </div>
+    </div>
+  </article>
+
+  <div class="banner" id="notifBanner" hidden>
+    <p><b>Recibe tu oración a la hora que quieras</b>Te aviso en la mañana y en la noche.</p>
+    <button class="btn" id="bannerBtn">Activar</button>
+  </div>
+
+  <div class="affirm"><small>Afirmación de hoy · repítela tres veces</small><q id="aff"></q></div>
+
+  <section class="card sec">
+    <h3>Mis intenciones</h3>
+    <p class="hint">Personas o cosas por las que quieres pedir. Aparecen dentro de tus oraciones.</p>
+    <div class="ints" id="ints"></div>
+    <form class="add" id="addForm"><input id="intIn" maxlength="40" placeholder="Ej. la salud de mi mamá" autocomplete="off"><button class="btn" type="submit">Agregar</button></form>
+  </section>
+
+  <section class="card sec">
+    <div class="stat"><div><h3>Tu semana</h3><p class="hint" style="margin:0">Mañana y noche</p></div><div style="text-align:right"><strong id="streakN">0</strong><div class="hint" style="margin:0" id="streakL">días seguidos</div></div></div>
+    <div class="week" id="week"></div>
+  </section>
+
+  <section class="card sec">
+    <h3>Oraciones guardadas</h3>
+    <p class="hint">Toca el corazón en una oración para guardarla aquí.</p>
+    <div class="saved" id="saved"></div>
+  </section>
+</main>
+
+<div class="ov" id="ovBg"><div class="sheet" role="dialog" aria-modal="true" aria-label="Fondos">
+  <div class="grab"></div><h3>Fondos</h3><p class="hint">"Automático" cambia solo entre amanecer y noche estrellada.</p>
+  <div class="bgs" id="bgs"></div>
+</div></div>
+
+<div class="ov" id="ovSet"><div class="sheet" role="dialog" aria-modal="true" aria-label="Ajustes"><div class="grab"></div><div id="setBody"></div></div></div>
+
+<div class="ov" id="ovAuth"><div class="sheet auth" role="dialog" aria-modal="true" aria-label="Cuenta">
+  <div class="grab"></div>
+  <h3 id="aTitle">Entra a tu cuenta</h3>
+  <p class="hint">Es la misma cuenta de Fluent, Nutri, Ritmo, North y Days. La necesitas para los avisos y para guardar tu progreso.</p>
+  <div class="set">
+    <div class="field" id="nameF" hidden><label for="aName">Tu nombre</label><input id="aName" autocomplete="given-name"></div>
+    <div class="field"><label for="aEmail">Correo</label><input id="aEmail" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com"></div>
+    <div class="field"><label for="aPass">Contraseña</label><input id="aPass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="err" id="aErr"></div>
+    <button class="btn" id="aBtn">Entrar</button>
+    <button class="linkb" id="aSwap">¿No tienes cuenta? Crear una</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ============ datos de oraciones ============ */
+const F={
+ mañana:{
+  open:["Buenos días, Señor.","Dios mío, gracias por despertarme hoy.","Padre, empiezo este día contigo.","Señor, gracias por un día más de vida.","Dios, antes que nada, te saludo a ti.","Gracias, Señor, por esta nueva mañana.","Padre bueno, aquí estoy otra vez.","Dios mío, abro los ojos y pienso en ti.","Señor, te entrego este día desde el primer minuto.","Padre, gracias porque desperté con vida."],
+  close:["Hoy camino contigo.","Que todo lo que haga hoy te dé gloria.","Contigo, hoy todo saldrá bien.","Bendice mi día de principio a fin.","Me pongo en tus manos.","Voy confiado porque tú vas conmigo.","Hoy será un buen día porque estás aquí.","Lléname de tu luz para compartirla."]
+ },
+ noche:{
+  open:["Señor, se acaba el día y vengo a ti.","Buenas noches, Dios mío.","Padre, antes de dormir quiero hablar contigo.","Dios, termino mi día en tu presencia.","Señor, gracias por acompañarme hoy.","Padre, me acuesto en paz contigo.","Dios mío, aquí estoy al final del día.","Señor, apago la luz pero no tu presencia."],
+  close:["Cuida mi sueño esta noche.","Descanso tranquilo en tus brazos.","Despiértame con nuevas fuerzas.","Duermo en paz porque tú me cuidas.","Guarda mi casa mientras duermo.","Mañana te busco otra vez.","Que tu paz llene mi cuarto esta noche.","Te entrego lo que no pude resolver."]
+ }
+};
+const G={
+ mañana:["Gracias por mi salud y por mi cuerpo que funciona.","Gracias por la salud de mi familia.","Gracias por mi mamá, mi papá y los que amo.","Gracias por el techo que me cubre y el pan de cada día.","Gracias por mi trabajo y por lo que sé hacer.","Gracias por el aire que respiro y por mis ojos que ven.","Gracias por los amigos que pusiste en mi camino.","Gracias por lo que tengo, aunque a veces no lo vea.","Gracias por mi mente clara y mis manos para trabajar.","Gracias por cada persona que me quiere.","Gracias por las oportunidades que traerá este día.","Gracias por el descanso de anoche."],
+ noche:["Gracias por todo lo bueno que pasó hoy.","Gracias por la salud que me diste hoy.","Gracias por cuidar a mi familia este día.","Gracias por el alimento que tuve en mi mesa.","Gracias por el trabajo y por lo que logré hoy.","Gracias por protegerme de peligros que ni conocí.","Gracias por las pruebas que me hicieron más fuerte.","Gracias por la gente que me sonrió hoy.","Gracias por llegar a casa con bien.","Gracias porque hoy no me faltó nada."]
+};
+const R={
+ "motivación":["Dame ganas y disciplina para cumplir lo que me toca.","Enciende en mí el fuego de mis sueños.","Quítame la flojera y el miedo a empezar.","Que no me rinda aunque cueste.","Ayúdame a terminar lo que empiezo.","Recuérdame que cada paso pequeño cuenta.","Pon en mi mente ideas claras y buenas.","Hazme constante aunque nadie me vea."],
+ "fuerza":["Dame fuerza cuando sienta que no puedo.","Sé mi roca en los momentos difíciles.","Hazme valiente para decidir y actuar.","Quita de mí la ansiedad y la preocupación.","Que nada ni nadie me robe la paz.","Sostenme cuando me sienta débil.","Dame firmeza para no rendirme.","Cúbreme con tu protección."],
+ "abundancia":["Abre puertas de trabajo y de prosperidad.","Bendice mi dinero y enséñame a cuidarlo.","Multiplica lo que siembro con mis manos.","Que nunca falte nada en mi casa, y aún sobre.","Llévame a las oportunidades correctas.","Aleja de mí la escasez y hazme generoso.","Bendice mis proyectos y hazlos crecer.","Que mis deudas se paguen y mis ahorros crezcan."],
+ "salud":["Dame salud en cuerpo, mente y corazón.","Sana lo que me duele, por dentro y por fuera.","Cuida mi cuerpo y dame energía.","Aleja de mí toda enfermedad.","Dame un descanso que de verdad me reponga.","Que mi mente esté tranquila y sana.","Guía a los médicos que nos cuidan."],
+ "familia":["Cuida la salud de mi familia.","Protege a mis papás y dales larga vida.","Une a mi familia en amor y respeto.","Guarda a los míos dondequiera que estén.","Sana a los que están enfermos en mi casa.","Que en mi hogar siempre haya paz.","Bendice a mis hermanos y a sus hijos."],
+ "paz":["Calma mis pensamientos y mi corazón.","Enséñame a soltar lo que no controlo.","Llena de paz mi casa y mi mente.","Ayúdame a perdonar y a perdonarme.","Quita de mí el enojo y la tristeza.","Dame serenidad para esperar tus tiempos."],
+ "amor":["Llena mi corazón de amor verdadero.","Bendice a la persona que amo.","Pon gente buena y sincera en mi vida.","Enséñame a amar sin miedo.","Sana mis relaciones y acércame a quien quiero.","Hazme paciente y amable con los demás."]
+};
+const TITLES={"motivación":["Ganas para seguir","Hoy es mi día","Fuego para mis sueños"],"fuerza":["Fuerza para hoy","Mi roca y mi escudo","Valor para seguir"],"abundancia":["Abundancia y provisión","Puertas abiertas","Bendice mi trabajo"],"salud":["Por la salud","Sana mi cuerpo","Vida y energía"],"familia":["Por mi familia","Cuida a los míos","Bendición en mi hogar"],"paz":["Paz para mi mente","Calma mi corazón","Descanso del alma"],"amor":["Por el amor","Un corazón que ama","Gente buena en mi vida"]};
+const TEMAS=Object.keys(R);
+const A={
+ mañana:["Hoy Dios va delante de mí y todo me sale bien.","Soy capaz, soy fuerte y estoy bendecido.","Las oportunidades me buscan y yo estoy listo.","Merezco abundancia y la recibo con gratitud.","Mi esfuerzo de hoy construye mi futuro.","Nada me falta porque Dios es mi proveedor.","Hoy elijo la fe por encima del miedo.","Mi cuerpo está sano y lleno de energía.","Atraigo personas buenas y caminos abiertos.","Hoy doy lo mejor de mí."],
+ noche:["Hice lo mejor que pude y eso es suficiente.","Descanso en paz porque Dios cuida de mí.","Mañana despierto con nuevas fuerzas.","Lo que pedí ya está en camino.","Suelto lo que no controlo y confío.","Mi vida está llena de bendiciones.","Soy amado, protegido y guiado.","Mi familia está en buenas manos.","Mi cuerpo se sana mientras duermo."]
+};
+
+/* ============ utilidades ============ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('luz_'+k));localStorage.setItem('luz_'+k,JSON.stringify(v))}catch(e){return null}};
+const pad=n=>String(n).padStart(2,'0');
+const dkey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2000)}
+function rnd(seed){return()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}}
+const pick=(a,r)=>a[Math.floor(r()*a.length)];
+
+/* ============ estado ============ */
+const SUPABASE_URL='https://xvncydijzordzwrilqai.supabase.co',SUPABASE_KEY='sb_publishable_tLpsLGTQfdAGX5Il611y7w_i3DIuWrx',PUSH_API='https://hola-ritmo.vercel.app';
+let sb=null;try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){}
+let user=null,items=[],logs=[];  // items: avisos (habit) e intenciones (todo) de app 'luz'
+let now=new Date(),dayN=Math.floor((now-new Date(now.getFullYear(),0,0))/864e5);
+let mode=(now.getHours()>=4&&now.getHours()<16)?'mañana':'noche',topic='hoy',offset=0,cur=null;
+let local={ints:ls('ints')||[],done:ls('done')||[],favs:ls('favs')||[],bg:ls('bg')||'auto'};
+const saveLocal=()=>{ls('ints',local.ints);ls('done',local.done);ls('favs',local.favs);ls('bg',local.bg)};
+const intentions=()=>user?items.filter(i=>i.kind==='todo').map(i=>i.title):local.ints;
+const habitOf=m=>items.find(i=>i.kind==='habit'&&i.moment===m);
+
+/* ============ oración del día ============ */
+function build(){
+  const r=rnd(dayN*97+(mode==='mañana'?1:5003)+offset*7919+now.getFullYear()*31);
+  const main=topic==='hoy'?TEMAS[(dayN*3+(mode==='noche'?4:0)+offset)%TEMAS.length]:topic;
+  let second;do{second=pick(TEMAS,r)}while(second===main);
+  const r1=pick(R[main],r);let r2;do{r2=pick(R[main],r)}while(r2===r1);
+  const lines=[pick(F[mode].open,r),pick(G[mode],r),r1,r2];
+  const ints=intentions();
+  if(ints.length)lines.push('Te pido también por '+ints[Math.floor(r()*ints.length)].replace(/^por\s+/i,'')+'.');
+  else lines.push(pick(R[second],r));
+  lines.push(pick(F[mode].close,r));
+  return {t:main,h:pick(TITLES[main],r),lines,id:dayN+'-'+mode+'-'+main+'-'+offset};
+}
+function isDone(m=mode,d=dkey(now)){
+  if(user){const h=habitOf(m);if(h)return logs.some(l=>l.item_id===h.id&&l.day===d)}
+  return local.done.includes(d+'|'+m);
+}
+function renderPrayer(anim=true){
+  cur=build();
+  $('tag').textContent=(mode==='mañana'?'Oración de la mañana':'Oración de la noche')+' · '+cur.t;
+  $('title').textContent=cur.h;
+  $('text').innerHTML=cur.lines.map((l,i)=>`<span style="animation-delay:${anim?i*0.12:0}s">${esc(l)}</span>`).join('');
+  const d=isDone();$('done').textContent=d?'Rezada ✓':'Ya la recé';$('done').classList.toggle('done',d);
+  $('fav').setAttribute('aria-pressed',local.favs.some(f=>f.h===cur.h&&f.x===cur.lines.join('\n')));
+}
+function render(){
+  $('bM').setAttribute('aria-pressed',mode==='mañana');$('bN').setAttribute('aria-pressed',mode==='noche');
+  const name=(user&&user.user_metadata&&user.user_metadata.name)||'';
+  $('greet').textContent=(mode==='mañana'?'Buenos días':'Buenas noches')+(name?', '+name.split(' ')[0]:'');
+  $('sub').textContent=mode==='mañana'?'Empieza tu día de la mano de Dios.':'Entrega tu día y descansa en paz.';
+  $('chips').innerHTML=['hoy',...TEMAS].map(t=>`<button class="chip" data-t="${t}" aria-pressed="${t===topic}">${t==='hoy'?'La de hoy':t[0].toUpperCase()+t.slice(1)}</button>`).join('');
+  const a=A[mode];$('aff').textContent=a[(dayN*7)%a.length];
+  renderPrayer();renderInts();renderWeek();renderSaved();renderBanner();setScene();
+}
+function renderInts(){
+  const ints=intentions();
+  $('ints').innerHTML=ints.length?ints.map((t,i)=>`<span class="int">${esc(t)}<button data-i="${i}" aria-label="Quitar ${esc(t)}">✕</button></span>`).join(''):'<span class="empty">Aún no agregas ninguna.</span>';
+}
+function renderWeek(){
+  const names=['D','L','M','M','J','V','S'];let html='';
+  for(let k=6;k>=0;k--){const d=new Date(now);d.setDate(d.getDate()-k);const key=dkey(d);
+    html+=`<div class="${k===0?'today':''}">${names[d.getDay()]}<i><b class="${isDone('mañana',key)?'on':''}"></b><b class="${isDone('noche',key)?'on':''}"></b></i></div>`}
+  $('week').innerHTML=html;
+  let s=0;for(let k=0;k<400;k++){const d=new Date(now);d.setDate(d.getDate()-k);const key=dkey(d);if(isDone('mañana',key)||isDone('noche',key))s++;else if(k>0)break}
+  $('streakN').textContent=s;$('streakL').textContent=s===1?'día seguido':'días seguidos';
+}
+function renderSaved(){
+  $('saved').innerHTML=local.favs.length?local.favs.map((f,i)=>`<details><summary>${esc(f.h)}<span class="empty">${esc(f.m)}</span></summary><p>${esc(f.x)}\nAmén.</p><button class="linkb" data-del="${i}">Quitar</button></details>`).join(''):'<span class="empty">Todavía no guardas ninguna.</span>';
+}
+
+/* ============ acciones ============ */
+$('bM').onclick=()=>{mode='mañana';offset=0;render()};
+$('bN').onclick=()=>{mode='noche';offset=0;render()};
+$('chips').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;topic=b.dataset.t;offset=0;render()};
+$('other').onclick=()=>{offset++;renderPrayer()};
+$('done').onclick=async()=>{
+  if(isDone())return toast('Ya rezaste esta oración hoy');
+  const d=dkey(now);chime();
+  if(user&&habitOf(mode)){const h=habitOf(mode);logs.push({item_id:h.id,day:d});sb.from('rt_habit_log').upsert({item_id:h.id,user_id:user.id,day:d},{onConflict:'item_id,day',ignoreDuplicates:true}).then(({error})=>error&&console.warn(error))}
+  local.done.push(d+'|'+mode);saveLocal();renderPrayer(false);renderWeek();toast('Que Dios te bendiga');
+};
+$('fav').onclick=()=>{const x=cur.lines.join('\n');const i=local.favs.findIndex(f=>f.h===cur.h&&f.x===x);
+  if(i>=0)local.favs.splice(i,1);else local.favs.unshift({h:cur.h,x,m:mode==='mañana'?'Mañana':'Noche'});saveLocal();renderPrayer(false);renderSaved();toast(i>=0?'Quitada de guardadas':'Guardada')};
+$('saved').onclick=e=>{const b=e.target.closest('[data-del]');if(!b)return;local.favs.splice(+b.dataset.del,1);saveLocal();renderSaved();renderPrayer(false)};
+$('copy').onclick=()=>{const t=cur.h+'\n\n'+cur.lines.join('\n')+'\nAmén.';navigator.clipboard.writeText(t).then(()=>toast('Oración copiada')).catch(()=>toast('No se pudo copiar'))};
+let speaking=false;
+$('speak').onclick=()=>{
+  if(!('speechSynthesis' in window))return toast('Tu teléfono no permite leer en voz alta');
+  if(speaking){speechSynthesis.cancel();speaking=false;return}
+  const u=new SpeechSynthesisUtterance(cur.lines.join('. ')+'. Amén.');u.lang='es-MX';u.rate=.88;u.pitch=1;
+  const v=speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang));u.voice=v.find(v=>/MX|US/.test(v.lang))||v[0]||null;
+  u.onend=()=>speaking=false;speaking=true;speechSynthesis.speak(u);
+};
+$('addForm').onsubmit=async e=>{e.preventDefault();const t=$('intIn').value.trim();if(!t)return;$('intIn').value='';
+  if(user){const {data,error}=await sb.from('rt_items').insert({user_id:user.id,kind:'todo',title:t,app:'luz',moment:'intencion'}).select().single();if(error)return toast('No se pudo guardar');items.push(data)}
+  else{local.ints.push(t);saveLocal()}
+  renderInts();offset=0;renderPrayer();toast('La incluiré en tus oraciones')};
+$('ints').onclick=async e=>{const b=e.target.closest('[data-i]');if(!b)return;const i=+b.dataset.i;
+  if(user){const it=items.filter(x=>x.kind==='todo')[i];items=items.filter(x=>x!==it);sb.from('rt_items').delete().eq('id',it.id).then(()=>{})}
+  else{local.ints.splice(i,1);saveLocal()}renderInts();renderPrayer(false)};
+
+function chime(){try{const c=new (window.AudioContext||window.webkitAudioContext)();[523.25,659.25,783.99].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,c.currentTime+i*.12);g.gain.linearRampToValueAtTime(.12,c.currentTime+i*.12+.02);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+i*.12+1.6);o.connect(g).connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+1.7)})}catch(e){}}
+
+/* ============ hojas ============ */
+function openOv(id){$(id).classList.add('open')}
+function closeOv(id){$(id).classList.remove('open')}
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+$('bgBtn').onclick=()=>{renderBgs();openOv('ovBg')};
+$('setBtn').onclick=()=>{renderSet();openOv('ovSet')};
+$('bannerBtn').onclick=()=>{renderSet();openOv('ovSet')};
+
+/* ============ cuenta ============ */
+let signup=false;
+$('aSwap').onclick=()=>{signup=!signup;$('nameF').hidden=!signup;$('aTitle').textContent=signup?'Crea tu cuenta':'Entra a tu cuenta';$('aBtn').textContent=signup?'Crear cuenta':'Entrar';$('aSwap').textContent=signup?'¿Ya tienes cuenta? Entrar':'¿No tienes cuenta? Crear una';$('aErr').textContent=''};
+$('aBtn').onclick=async()=>{
+  const email=$('aEmail').value.trim(),password=$('aPass').value;$('aErr').textContent='';
+  if(!email||password.length<6)return $('aErr').textContent='Escribe tu correo y una contraseña de al menos 6 caracteres.';
+  $('aBtn').disabled=true;
+  const r=signup?await sb.auth.signUp({email,password,options:{data:{name:$('aName').value.trim()},emailRedirectTo:location.origin}}):await sb.auth.signInWithPassword({email,password});
+  $('aBtn').disabled=false;
+  if(r.error)return $('aErr').textContent=/Invalid login/i.test(r.error.message)?'Correo o contraseña incorrectos.':r.error.message;
+  if(signup&&!r.data.session)return $('aErr').textContent='Te mandamos un correo para confirmar tu cuenta. Ábrelo y luego entra aquí.';
+  closeOv('ovAuth');await onUser(r.data.user);toast('¡Bienvenido!');renderSet();openOv('ovSet');
+};
+async function onUser(u){
+  user=u;if(!u){items=[];logs=[];render();return}
+  const since=new Date(now);since.setDate(since.getDate()-400);
+  const [a,b]=await Promise.all([sb.from('rt_items').select('*').eq('app','luz'),sb.from('rt_habit_log').select('item_id,day').eq('user_id',u.id).gte('day',dkey(since))]);
+  items=a.data||[];logs=b.data||[];
+  // Las intenciones guardadas sin cuenta se suben una sola vez.
+  if(local.ints.length){const add=local.ints.filter(t=>!items.some(i=>i.kind==='todo'&&i.title===t)).map(t=>({user_id:u.id,kind:'todo',title:t,app:'luz',moment:'intencion'}));local.ints=[];saveLocal();if(add.length){const {data}=await sb.from('rt_items').insert(add).select();items.push(...(data||[]))}}
+  // Lo que marcó como rezado sin cuenta también se conserva.
+  logs=logs.filter(l=>items.some(i=>i.id===l.item_id));
+  render();
+}
+
+/* ============ avisos ============ */
+function pushState(){
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent),st=navigator.standalone||matchMedia('(display-mode: standalone)').matches;
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return ios&&!st?'install':'unsupported';
+  if(Notification.permission==='denied')return 'denied';
+  return Notification.permission==='granted'&&ls('push')==='on'?'on':'off';
+}
+function renderBanner(){const s=pushState();$('notifBanner').hidden=!(s==='off'||s==='install')||ls('bannerHide')===dkey(now);$('setBtn').classList.toggle('dot',s!=='on'&&s!=='unsupported')}
+function b64(s){const p='='.repeat((4-s.length%4)%4),b=(s+p).replace(/-/g,'+').replace(/_/g,'/'),r=atob(b);return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))}
+async function enablePush(){
+  if(!user){openOv('ovAuth');return false}
+  const perm=await Notification.requestPermission();if(perm!=='granted'){toast('Sin permiso no te puedo avisar');return false}
+  const reg=await navigator.serviceWorker.ready;const {publicKey}=await (await fetch(PUSH_API+'/api/vapid')).json();
+  let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(publicKey)});
+  const j=sub.toJSON();const {error}=await sb.from('rt_push_subs').upsert({user_id:user.id,app:'luz',endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,tz:Intl.DateTimeFormat().resolvedOptions().timeZone},{onConflict:'endpoint'});
+  if(error){toast('No se pudo activar');console.warn(error);return false}
+  for(const m of ['mañana','noche'])if(!habitOf(m))await saveTime(m,m==='mañana'?'06:30':'22:00',true);
+  ls('push','on');return true;
+}
+async function saveTime(m,time,on){
+  const h=habitOf(m);
+  if(!on){if(h){await sb.from('rt_items').update({time_of_day:null}).eq('id',h.id);h.time_of_day=null}return}
+  if(h){await sb.from('rt_items').update({time_of_day:time,last_notified_date:null}).eq('id',h.id);h.time_of_day=time;h.last_notified_date=null}
+  else{const {data}=await sb.from('rt_items').insert({user_id:user.id,kind:'habit',title:m==='mañana'?'Tu oración de la mañana':'Tu oración de la noche',emoji:m==='mañana'?'☀️':'🌙',time_of_day:time,days:[0,1,2,3,4,5,6],moment:m,app:'luz'}).select().single();if(data)items.push(data)}
+}
+function renderSet(){
+  const s=pushState();let h='<h3>Avisos</h3>';
+  if(s==='install'){h+=`<p class="hint">Para recibir avisos en iPhone, primero instala Luz Diaria en tu pantalla de inicio:</p><ol class="steps"><li>Abre esta página en Safari.</li><li>Toca el botón Compartir (el cuadrito con flecha).</li><li>Elige "Agregar a pantalla de inicio".</li><li>Abre Luz Diaria desde el ícono y vuelve aquí.</li></ol>`}
+  else if(s==='unsupported'){h+='<p class="hint">Este navegador no permite notificaciones. Prueba en Safari (iPhone) o Chrome.</p>'}
+  else if(s==='denied'){h+='<p class="hint">Bloqueaste las notificaciones. Actívalas en Ajustes del teléfono → Notificaciones → Luz Diaria.</p>'}
+  else if(s==='off'){h+=`<p class="hint">Te mando tu oración en la mañana y en la noche. Si ya la rezaste, no te molesto.</p><button class="btn" id="pushOn" style="width:100%">Activar avisos</button>`}
+  else{
+    const hm=habitOf('mañana'),hn=habitOf('noche');
+    h+=`<p class="hint">Si ya rezaste, ese día no te llega el aviso.</p><div class="set">
+    <div class="field"><label>Mañana<small>Al despertar</small></label><input type="time" id="tM" value="${hm&&hm.time_of_day||'06:30'}" ${hm&&hm.time_of_day?'':'disabled'}><button class="toggle" id="sM" role="switch" aria-label="Aviso de la mañana" aria-checked="${!!(hm&&hm.time_of_day)}"></button></div>
+    <div class="field"><label>Noche<small>Antes de dormir</small></label><input type="time" id="tN" value="${hn&&hn.time_of_day||'22:00'}" ${hn&&hn.time_of_day?'':'disabled'}><button class="toggle" id="sN" role="switch" aria-label="Aviso de la noche" aria-checked="${!!(hn&&hn.time_of_day)}"></button></div>
+    <button class="btn ghost" id="pushTest">Mandarme un aviso de prueba</button></div>`;
+  }
+  h+='<h3 style="margin-top:26px">Cuenta</h3>';
+  h+=user?`<p class="hint">${esc(user.email)}</p><button class="btn ghost" id="logout">Cerrar sesión</button>`:`<p class="hint">Entra para recibir avisos y no perder tu racha si cambias de teléfono.</p><button class="btn" id="login">Entrar o crear cuenta</button>`;
+  h+=`<p class="hint" style="margin-top:22px">Luz Diaria se actualiza sola. Versión ${VERSION}.</p>`;
+  $('setBody').innerHTML=h;
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on('pushOn',async e=>{e.target.disabled=true;try{if(await enablePush()){toast('Avisos activados');renderBanner();renderSet()}}catch(err){console.warn(err);toast('No se pudo activar')}e.target&&(e.target.disabled=false)});
+  on('login',()=>{closeOv('ovSet');openOv('ovAuth')});
+  on('logout',async()=>{await sb.auth.signOut();ls('push','off');closeOv('ovSet');onUser(null)});
+  on('pushTest',async()=>{try{const {data:{session}}=await sb.auth.getSession();const r=await fetch(PUSH_API+'/api/test-push',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({app:'luz'})});toast(r.ok?'Enviado, revisa tus notificaciones':'No se pudo enviar')}catch(e){toast('No se pudo enviar')}});
+  for(const [m,sId,tId] of [['mañana','sM','tM'],['noche','sN','tN']]){
+    const sw=$(sId),ti=$(tId);if(!sw)continue;
+    sw.onclick=async()=>{const v=sw.getAttribute('aria-checked')!=='true';sw.setAttribute('aria-checked',v);ti.disabled=!v;await saveTime(m,ti.value,v);toast(v?'Aviso activado':'Aviso apagado')};
+    ti.onchange=async()=>{await saveTime(m,ti.value,true);toast('Te aviso a las '+ti.value)};
+  }
+}
+
+/* ============ fondos animados ============ */
+const SCENES={
+ auto:{n:'Automático'},
+ amanecer:{n:'Amanecer'},
+ montanas:{n:'Montañas'},
+ mar:{n:'Mar dorado'},
+ campo:{n:'Campo de luz'},
+ estrellas:{n:'Noche estrellada'},
+ aurora:{n:'Aurora'},
+ luna:{n:'Luna en el lago'}
+};
+function sceneName(){return local.bg==='auto'?(mode==='mañana'?'amanecer':'estrellas'):local.bg}
+function mkStars(n,seed){const r=rnd(seed);return Array.from({length:n},()=>({x:r(),y:r()*.75,s:r()*1.4+.3,p:r()*6.28,v:.5+r()*1.5}))}
+const STARS=mkStars(260,7);
+function ridge(seed,n){const r=rnd(seed);const pts=[];let y=r();for(let i=0;i<=n;i++){y+= (r()-.5)*.35;y=Math.max(0,Math.min(1,y));pts.push(y)}return pts}
+const RIDGES=[ridge(3,24),ridge(11,30),ridge(23,40)];
+function grad(c,h,stops){const g=c.createLinearGradient(0,0,0,h);stops.forEach(([o,col])=>g.addColorStop(o,col));return g}
+function glow(c,x,y,r,col){const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+function stars(c,w,h,t,a=1){for(const s of STARS){const tw=.55+.45*Math.sin(t*s.v+s.p);c.fillStyle=`rgba(255,250,235,${tw*a})`;c.beginPath();c.arc(s.x*w,s.y*h,s.s*(w>700?1.2:1),0,7);c.fill()}}
+function mountains(c,w,h,t,cols,base){RIDGES.forEach((pts,k)=>{c.fillStyle=cols[k];c.beginPath();c.moveTo(0,h);const top=h*(base+k*.08),amp=h*(.16-k*.03);pts.forEach((p,i)=>c.lineTo(i/(pts.length-1)*w,top+p*amp));c.lineTo(w,h);c.fill()})}
+function clouds(c,w,h,t,col,yb){for(let i=0;i<6;i++){const x=((i*0.23+t*0.004*(1+i%3*0.4))%1.4-.2)*w,y=h*(yb+((i*37)%10)/60);c.fillStyle=col;for(let j=0;j<5;j++){c.beginPath();c.ellipse(x+j*w*.035,y+Math.sin(j*1.7)*h*.008,w*.06,h*.022,0,0,7);c.fill()}}}
+let shoot=null;
+const DRAW={
+ amanecer(c,w,h,t){
+  c.fillStyle=grad(c,h,[[0,'#2b3a7a'],[.35,'#7b6bb3'],[.6,'#f29b7a'],[.78,'#ffcf8a'],[1,'#ffe9c2']]);c.fillRect(0,0,w,h);
+  const sy=h*(.66-.04*Math.sin(t*.05));
+  c.save();c.translate(w/2,sy);c.globalAlpha=.16;for(let i=0;i<14;i++){c.rotate(Math.PI/7);c.fillStyle='#fff3cf';c.beginPath();c.moveTo(0,0);c.lineTo(Math.max(w,h),-30);c.lineTo(Math.max(w,h),30);c.fill()}c.restore();
+  c.save();c.translate(w/2,sy);c.rotate(t*.02);c.globalAlpha=.08;for(let i=0;i<10;i++){c.rotate(Math.PI/5);c.fillStyle='#fff';c.beginPath();c.moveTo(0,0);c.lineTo(Math.max(w,h),-60);c.lineTo(Math.max(w,h),60);c.fill()}c.restore();
+  glow(c,w/2,sy,Math.min(w,h)*.5,'rgba(255,230,170,.75)');c.fillStyle='#fff6dc';c.beginPath();c.arc(w/2,sy,Math.min(w,h)*.07,0,7);c.fill();
+  clouds(c,w,h,t,'rgba(255,220,210,.35)',.22);
+  mountains(c,w,h,t,['rgba(150,100,150,.55)','rgba(105,70,120,.75)','#4a3260'],.72);
+ },
+ montanas(c,w,h,t){
+  c.fillStyle=grad(c,h,[[0,'#1f4e8c'],[.45,'#6fa6d6'],[.7,'#f7c59f'],[1,'#f6a37f']]);c.fillRect(0,0,w,h);
+  glow(c,w*.72,h*.5,Math.min(w,h)*.35,'rgba(255,240,200,.8)');c.fillStyle='#fffbe9';c.beginPath();c.arc(w*.72,h*.5,Math.min(w,h)*.05,0,7);c.fill();
+  clouds(c,w,h,t,'rgba(255,255,255,.4)',.18);
+  mountains(c,w,h,t,['#7a8fbf','#4d5f96','#25305e'],.55);
+  c.fillStyle=grad(c,h,[[0,'rgba(255,255,255,0)'],[.8,'rgba(255,255,255,0)'],[1,'rgba(255,230,220,.25)']]);c.fillRect(0,0,w,h);
+  for(let i=0;i<3;i++){const y=h*(.72+i*.08)+Math.sin(t*.2+i)*6;c.fillStyle='rgba(255,240,235,.08)';c.fillRect(0,y,w,h*.04)}
+ },
+ mar(c,w,h,t){
+  const hz=h*.58;
+  c.fillStyle=grad(c,hz,[[0,'#3b2d6b'],[.5,'#d9708a'],[1,'#ffc77d']]);c.fillRect(0,0,w,hz);
+  const sy=hz-h*.03;glow(c,w/2,sy,Math.min(w,h)*.45,'rgba(255,215,140,.7)');c.fillStyle='#fff1c9';c.beginPath();c.arc(w/2,sy,Math.min(w,h)*.08,Math.PI,0);c.fill();
+  c.fillStyle=grad(c,h,[[.58,'#c46a6a'],[.75,'#5a3f78'],[1,'#22193f']]);c.fillRect(0,hz,w,h-hz);
+  for(let i=0;i<40;i++){const y=hz+Math.pow(i/40,1.6)*(h-hz),amp=2+i*.3,wd=w*(.06+i*.012);
+   c.strokeStyle=`rgba(255,215,150,${.5-i/90})`;c.lineWidth=1+i*.05;c.beginPath();const off=Math.sin(t*.9+i)*wd*.3;c.moveTo(w/2-wd+off,y);c.lineTo(w/2+wd+off,y+Math.sin(t+i)*amp*.2);c.stroke()}
+  for(let k=0;k<6;k++){c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=1.5;c.beginPath();const y=hz+(h-hz)*(.15+k*.15);for(let x=0;x<=w;x+=10)c.lineTo(x,y+Math.sin(x*.02+t*(.6+k*.1)+k)*(3+k*1.5));c.stroke()}
+  clouds(c,w,h,t,'rgba(255,190,190,.25)',.2);
+ },
+ campo(c,w,h,t){
+  c.fillStyle=grad(c,h,[[0,'#4a6fb8'],[.4,'#a9c4e8'],[.62,'#ffe1a8'],[1,'#ffd27a']]);c.fillRect(0,0,w,h);
+  glow(c,w*.3,h*.42,Math.min(w,h)*.5,'rgba(255,245,210,.9)');
+  c.save();c.translate(w*.3,h*.42);c.globalAlpha=.12;c.rotate(t*.015);for(let i=0;i<12;i++){c.rotate(Math.PI/6);c.fillStyle='#fff';c.beginPath();c.moveTo(0,0);c.lineTo(Math.max(w,h),-40);c.lineTo(Math.max(w,h),40);c.fill()}c.restore();
+  clouds(c,w,h,t,'rgba(255,255,255,.55)',.12);
+  const hz=h*.66;c.fillStyle='#8aa35a';c.beginPath();c.moveTo(0,h);for(let x=0;x<=w;x+=20)c.lineTo(x,hz+Math.sin(x*.004)*h*.03);c.lineTo(w,h);c.fill();
+  c.fillStyle='#6b8a3e';c.beginPath();c.moveTo(0,h);for(let x=0;x<=w;x+=20)c.lineTo(x,hz+h*.08+Math.sin(x*.006+1)*h*.03);c.lineTo(w,h);c.fill();
+  const r=rnd(5);for(let i=0;i<220;i++){const x=r()*w,y=hz+h*.04+r()*(h-hz),s=2+((y-hz)/(h-hz))*5,sw=Math.sin(t*1.5+x*.02)*2;c.strokeStyle='rgba(70,100,40,.6)';c.lineWidth=1;c.beginPath();c.moveTo(x,y+8);c.lineTo(x+sw,y);c.stroke();c.fillStyle=['#fff4c2','#ffd27a','#ffb3c7','#ffffff'][i%4];c.beginPath();c.arc(x+sw,y,s*.5,0,7);c.fill()}
+  for(let i=0;i<25;i++){const x=(Math.sin(i*12.9+t*.2)*.5+.5)*w,y=h*(.4+.4*(Math.cos(i*7.1+t*.15)*.5+.5));glow(c,x,y,6,'rgba(255,250,210,.8)')}
+ },
+ estrellas(c,w,h,t){
+  c.fillStyle=grad(c,h,[[0,'#05051a'],[.5,'#14124a'],[.85,'#3a2a6e'],[1,'#5a3a7a']]);c.fillRect(0,0,w,h);
+  c.save();c.globalAlpha=.25;c.translate(w*.5,h*.35);c.rotate(-.5);const mg=c.createLinearGradient(0,-h*.12,0,h*.12);mg.addColorStop(0,'rgba(180,160,255,0)');mg.addColorStop(.5,'rgba(220,200,255,.6)');mg.addColorStop(1,'rgba(180,160,255,0)');c.fillStyle=mg;c.fillRect(-w,-h*.12,w*2,h*.24);c.restore();
+  stars(c,w,h,t);
+  const mx=w*.86,my=h*.07+40,mr=Math.min(w,h)*.045;glow(c,mx,my,mr*5,'rgba(240,230,200,.35)');c.fillStyle='#fbf3da';c.beginPath();c.arc(mx,my,mr,0,7);c.fill();c.fillStyle='rgba(20,18,74,.95)';c.beginPath();c.arc(mx+mr*.45,my-mr*.2,mr*.9,0,7);c.fill();
+  if(!shoot&&Math.random()<.006)shoot={x:Math.random()*w*.7,y:Math.random()*h*.3,l:0};
+  if(shoot){shoot.l+=.025;const L=shoot.l,x=shoot.x+L*w*.5,y=shoot.y+L*h*.25;const g=c.createLinearGradient(x,y,x-90,y-45);g.addColorStop(0,`rgba(255,255,255,${1-L})`);g.addColorStop(1,'rgba(255,255,255,0)');c.strokeStyle=g;c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x-90,y-45);c.stroke();if(L>=1)shoot=null}
+  mountains(c,w,h,t,['#1d1745','#140f36','#0b0824'],.74);
+ },
+ aurora(c,w,h,t){
+  c.fillStyle=grad(c,h,[[0,'#020814'],[.6,'#0a1f33'],[1,'#123a46']]);c.fillRect(0,0,w,h);stars(c,w,h,t,.8);
+  c.globalCompositeOperation='lighter';
+  for(let k=0;k<4;k++){const hue=[140,170,280,190][k];for(let x=0;x<=w;x+=6){const n=Math.sin(x*.004+t*.25+k*1.3)+Math.sin(x*.011-t*.18+k)*.5;const y=h*(.22+k*.07)+n*h*.06;const len=h*(.18+.08*Math.sin(x*.01+t*.4+k));const g=c.createLinearGradient(0,y,0,y+len);g.addColorStop(0,`hsla(${hue},90%,65%,0)`);g.addColorStop(.3,`hsla(${hue},90%,60%,.13)`);g.addColorStop(1,`hsla(${hue},90%,55%,0)`);c.fillStyle=g;c.fillRect(x,y,6,len)}}
+  c.globalCompositeOperation='source-over';
+  mountains(c,w,h,t,['#0d2430','#08161f','#030a10'],.7);
+ },
+ luna(c,w,h,t){
+  const hz=h*.6;c.fillStyle=grad(c,hz,[[0,'#060b24'],[1,'#2a3a6e']]);c.fillRect(0,0,w,hz);stars(c,w,hz/0.75,t,.9);
+  const mx=w*.5,my=h*.28,mr=Math.min(w,h)*.1;glow(c,mx,my,mr*4,'rgba(230,235,255,.3)');c.fillStyle='#f4f1e6';c.beginPath();c.arc(mx,my,mr,0,7);c.fill();
+  c.fillStyle='rgba(200,195,180,.35)';[[.3,-.2,.18],[-.35,.1,.22],[.1,.4,.12]].forEach(([a,b,r])=>{c.beginPath();c.arc(mx+a*mr,my+b*mr,r*mr,0,7);c.fill()});
+  mountains(c,w,h,t,['#1a2550','#121a3c','#0a1028'],.48);
+  c.fillStyle=grad(c,h,[[.6,'#1c2850'],[1,'#070b1c']]);c.fillRect(0,hz,w,h-hz);
+  for(let i=0;i<34;i++){const y=hz+Math.pow(i/34,1.5)*(h-hz),wd=mr*(.6+i*.06);c.strokeStyle=`rgba(240,240,255,${.45-i/80})`;c.lineWidth=1.5;c.beginPath();const off=Math.sin(t*1.1+i*1.7)*wd*.25;c.moveTo(mx-wd+off,y);c.lineTo(mx+wd+off,y);c.stroke()}
+ }
+};
+const cv=$('sky'),cx=cv.getContext('2d');let W=0,H=0,DPR=1;
+function size(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',size);size();
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let t0=performance.now(),activeScene='amanecer';
+function setScene(){activeScene=sceneName();if(reduce)DRAW[activeScene](cx,W,H,20)}
+function loop(ts){if(!document.hidden)DRAW[activeScene](cx,W,H,(ts-t0)/1000);requestAnimationFrame(loop)}
+if(!reduce)requestAnimationFrame(loop);
+function renderBgs(){
+  $('bgs').innerHTML=Object.entries(SCENES).map(([k,s])=>`<button class="bg" data-bg="${k}" aria-pressed="${local.bg===k}"><canvas width="280" height="210"></canvas><span>${s.n}</span></button>`).join('');
+  $('bgs').querySelectorAll('.bg').forEach(b=>{const k=b.dataset.bg,c=b.querySelector('canvas').getContext('2d');if(k==='auto'){DRAW.amanecer(c,280,210,10);c.save();c.beginPath();c.moveTo(280,0);c.lineTo(280,210);c.lineTo(0,210);c.clip();DRAW.estrellas(c,280,210,10);c.restore()}else DRAW[k](c,280,210,10)});
+}
+$('bgs').onclick=e=>{const b=e.target.closest('[data-bg]');if(!b)return;local.bg=b.dataset.bg;saveLocal();setScene();renderBgs()};
+
+/* ============ arranque y actualizaciones ============ */
+const VERSION='2.0';
+$('date').textContent=now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+render();
+if(sb){sb.auth.getSession().then(({data})=>{if(data.session)onUser(data.session.user)});sb.auth.onAuthStateChange((ev,s)=>{if(ev==='SIGNED_OUT')onUser(null)})}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg=>{setInterval(()=>reg.update(),30*60*1000)});
+  let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded)return;reloaded=true;location.reload()});
+}
+// Si la app se queda abierta y cambia el día o pasa de mañana a noche, se actualiza sola.
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;const n=new Date();const m=(n.getHours()>=4&&n.getHours()<16)?'mañana':'noche';if(dkey(n)!==dkey(now)||m!==mode){now=n;dayN=Math.floor((n-new Date(n.getFullYear(),0,0))/864e5);mode=m;offset=0;render()}});
+// Al tocar un aviso se abre en el momento correcto.
+const q=new URLSearchParams(location.search).get('m');if(q==='noche'||q==='mañana'||q==='manana'){mode=q==='noche'?'noche':'mañana';render()}
+</script>
+</body>
+</html>
