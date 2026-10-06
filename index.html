@@ -13,20 +13,21 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,500;0,600;0,700;1,500&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 /* Una columna tipo devocionario sobre un cielo animado a pantalla completa */
 :root{
   --ink:#fffaf2; --soft:rgba(255,248,236,.78); --faint:rgba(255,248,236,.5);
-  --glass:rgba(18,14,42,.38); --glass2:rgba(18,14,42,.6); --line:rgba(255,248,236,.18);
-  --gold:#ffd27a; --goldInk:#2a1c05; --ok:#9be3b5;
-  --display:"Cormorant Infant",Georgia,serif; --body:"Nunito Sans",system-ui,-apple-system,sans-serif;
+  --glass:rgba(255,255,255,.045); --glass2:rgba(255,255,255,.08); --line:rgba(255,255,255,.12);
+  --gold:#f4efe4; --goldInk:#0b0b0f; --ok:#9be3b5;
+  --display:"Cormorant Garamond",Georgia,serif; --body:"Manrope",system-ui,-apple-system,sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
 #sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+.brandrow{display:flex;align-items:center;gap:10px}.cross{width:18px;height:24px;filter:drop-shadow(0 0 8px rgba(255,255,255,.7))}.brand{letter-spacing:.18em}
 .veil{position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,0) 30%,rgba(0,0,0,.25));pointer-events:none}
 main{position:relative;z-index:2;max-width:560px;margin:0 auto;padding-inline:16px;padding-block:calc(18px + env(safe-area-inset-top,0px)) calc(60px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px}
 button{font-family:var(--body);color:inherit}
@@ -128,7 +129,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 
 <main>
   <div class="top">
-    <div><div class="brand">BBL</div><div class="date" id="date"></div></div>
+    <div class="brandrow"><svg class="cross" viewBox="0 0 24 32" aria-hidden="true"><path d="M10 2h4v8h7v4h-7v16h-4V14H3v-4h7z" fill="#fff"/></svg><div><div class="brand">BBL</div><div class="date" id="date"></div></div></div>
     <div class="icons">
       <button class="ib" id="bgBtn" aria-label="Cambiar fondo"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.5 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></button>
       <button class="ib" id="setBtn" aria-label="Avisos y ajustes"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></button>
@@ -187,7 +188,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 </main>
 
 <div class="ov" id="ovBg"><div class="sheet" role="dialog" aria-modal="true" aria-label="Fondos">
-  <div class="grab"></div><h3>Fondos</h3><p class="hint">"Automático" cambia solo entre amanecer de día y galaxia de noche.</p>
+  <div class="grab"></div><h3>Fondos</h3><p class="hint">Elige el paisaje que te acompaña al orar.</p>
   <div class="bgs" id="bgs"></div>
 </div></div>
 
@@ -257,7 +258,7 @@ let sb=null;try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){}
 let user=null,items=[],logs=[];  // items: avisos (habit) e intenciones (todo) de app 'luz'
 let now=new Date(),dayN=Math.floor((now-new Date(now.getFullYear(),0,0))/864e5);
 let mode=(now.getHours()>=4&&now.getHours()<16)?'mañana':'noche',topic='hoy',offset=0,cur=null;
-let local={ints:ls('ints')||[],done:ls('done')||[],favs:ls('favs')||[],bg:ls('bg')||'auto'};
+let local={ints:ls('ints')||[],done:ls('done')||[],favs:ls('favs')||[],bg:ls('bg')||'galaxia'};
 const saveLocal=()=>{ls('ints',local.ints);ls('done',local.done);ls('favs',local.favs);ls('bg',local.bg)};
 const intentions=()=>user?items.filter(i=>i.kind==='todo').map(i=>i.title):local.ints;
 const habitOf=m=>items.find(i=>i.kind==='habit'&&i.moment===m);
@@ -290,8 +291,8 @@ function renderPrayer(anim=true){
 function render(){
   $('bM').setAttribute('aria-pressed',mode==='mañana');$('bN').setAttribute('aria-pressed',mode==='noche');
   const name=(user&&user.user_metadata&&user.user_metadata.name)||'';
-  $('greet').textContent=(mode==='mañana'?'Buenos días':'Buenas noches')+(name?', '+name.split(' ')[0]:'');
-  $('sub').textContent=mode==='mañana'?'Empieza tu día de la mano de Dios.':'Entrega tu día y descansa en paz.';
+  $('greet').textContent=mode==='mañana'?'Oración de la mañana':'Oración de la noche';
+  $('sub').textContent=name?name.split(' ')[0]+', '+(mode==='mañana'?'empieza tu día de la mano de Dios.':'entrega tu día y descansa en paz.'):(mode==='mañana'?'Empieza tu día de la mano de Dios.':'Entrega tu día y descansa en paz.');
   $('chips').innerHTML=['hoy',...TEMAS].map(t=>`<button class="chip" data-t="${t}" aria-pressed="${t===topic}">${t==='hoy'?'La de hoy':t[0].toUpperCase()+t.slice(1)}</button>`).join('');
   const a=A[mode];$('aff').textContent=a[(dayN*7)%a.length];
   renderPrayer();renderInts();renderWeek();renderSaved();renderBanner();setScene();
@@ -401,7 +402,7 @@ async function saveTime(m,time,on){
   const h=habitOf(m);
   if(!on){if(h){await sb.from('rt_items').update({time_of_day:null}).eq('id',h.id);h.time_of_day=null}return}
   if(h){await sb.from('rt_items').update({time_of_day:time,last_notified_date:null}).eq('id',h.id);h.time_of_day=time;h.last_notified_date=null}
-  else{const {data}=await sb.from('rt_items').insert({user_id:user.id,kind:'habit',title:m==='mañana'?'Tu oración de la mañana':'Tu oración de la noche',emoji:m==='mañana'?'☀️':'🌙',time_of_day:time,days:[0,1,2,3,4,5,6],moment:m,app:'luz'}).select().single();if(data)items.push(data)}
+  else{const {data}=await sb.from('rt_items').insert({user_id:user.id,kind:'habit',title:m==='mañana'?'Tu oración de la mañana':'Tu oración de la noche',emoji:null,time_of_day:time,days:[0,1,2,3,4,5,6],moment:m,app:'luz'}).select().single();if(data)items.push(data)}
 }
 function renderSet(){
   const s=pushState();let h='<h3>Avisos</h3>';
@@ -434,7 +435,6 @@ function renderSet(){
 
 /* ============ fondos animados ============ */
 const SCENES={
- auto:{n:'Automático'},
  galaxia:{n:'Galaxia'},
  amanecer:{n:'Amanecer'},
  montanas:{n:'Montañas'},
@@ -444,7 +444,7 @@ const SCENES={
  aurora:{n:'Aurora'},
  luna:{n:'Luna en el lago'}
 };
-function sceneName(){return local.bg==='auto'?(mode==='mañana'?'amanecer':'galaxia'):local.bg}
+function sceneName(){return local.bg==='auto'?'galaxia':local.bg}
 function mkStars(n,seed){const r=rnd(seed);return Array.from({length:n},()=>({x:r(),y:r()*.75,s:r()*1.4+.3,p:r()*6.28,v:.5+r()*1.5}))}
 const STARS=mkStars(260,7);
 function ridge(seed,n){const r=rnd(seed);const pts=[];let y=r();for(let i=0;i<=n;i++){y+= (r()-.5)*.35;y=Math.max(0,Math.min(1,y));pts.push(y)}return pts}
@@ -461,7 +461,7 @@ const DRAW={
   c.fillStyle='#000';c.fillRect(0,0,w,h);
   [[[124,92,255],.25,.3,.6],[[70,130,255],.8,.2,.5],[[255,100,190],.6,.85,.55],[[80,220,230],.15,.75,.4]].forEach(([col,px,py,pr],k)=>{const x=w*(px+.06*Math.sin(t*.05+k*2)),y=h*(py+.05*Math.cos(t*.04+k)),r=Math.max(w,h)*pr*(1+.08*Math.sin(t*.1+k));const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},.07)`);g.addColorStop(1,`rgba(${col},0)`);c.fillStyle=g;c.fillRect(0,0,w,h)});
   c.save();c.translate(w*.5,h*.45);c.rotate(-.6+t*.003);const mg=c.createLinearGradient(0,-h*.1,0,h*.1);mg.addColorStop(0,'rgba(200,180,255,0)');mg.addColorStop(.5,'rgba(230,215,255,.08)');mg.addColorStop(1,'rgba(200,180,255,0)');c.fillStyle=mg;c.fillRect(-w*1.5,-h*.1,w*3,h*.2);c.restore();
-  for(const s of GX){const z=s.s/1.7,sp=.6+z*3,x=(s.x*w+t*sp)%(w+4),y=s.y/.75*h,tw=.5+.5*Math.sin(t*(1+z*2)+s.p);const tw2=tw*tw;c.fillStyle=`rgba(255,255,255,${.2+tw2*.8})`;c.beginPath();c.arc(x,y,.4+z*1.6,0,7);c.fill();if(z>.8){const fl=(1+z*1.6)*(3+tw2*7);c.strokeStyle=`rgba(255,255,255,${tw2*.55})`;c.lineWidth=.8;c.beginPath();c.moveTo(x-fl,y);c.lineTo(x+fl,y);c.moveTo(x,y-fl);c.lineTo(x,y+fl);c.stroke();glow(c,x,y,fl*.7,`rgba(255,255,255,${tw2*.3})`)}}
+  for(const s of GX){const z=s.s/1.7,sp=.6+z*3,x=(s.x*w+t*sp)%(w+4),y=s.y/.75*h,tw=.5+.5*Math.sin(t*(1+z*2)+s.p);const tw2=tw*tw;c.fillStyle=`rgba(255,255,255,${.2+tw2*.8})`;c.beginPath();c.arc(x,y,.4+z*1.6,0,7);c.fill();if(z>.92){const fl=(1+z*1.2)*(2+tw2*4);c.strokeStyle=`rgba(255,255,255,${tw2*.55})`;c.lineWidth=.8;c.beginPath();c.moveTo(x-fl,y);c.lineTo(x+fl,y);c.moveTo(x,y-fl);c.lineTo(x,y+fl);c.stroke();glow(c,x,y,fl*.7,`rgba(255,255,255,${tw2*.3})`)}}
   if(!shoot&&Math.random()<.006)shoot={x:Math.random()*w*.7,y:Math.random()*h*.3,l:0};
   if(shoot){shoot.l+=.025;const L=shoot.l,x=shoot.x+L*w*.5,y=shoot.y+L*h*.25;const g=c.createLinearGradient(x,y,x-90,y-45);g.addColorStop(0,`rgba(255,255,255,${1-L})`);g.addColorStop(1,'rgba(255,255,255,0)');c.strokeStyle=g;c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x-90,y-45);c.stroke();if(L>=1)shoot=null}
  },
@@ -537,7 +537,7 @@ function loop(ts){if(!document.hidden)DRAW[activeScene](cx,W,H,(ts-t0)/1000);req
 if(!reduce)requestAnimationFrame(loop);
 function renderBgs(){
   $('bgs').innerHTML=Object.entries(SCENES).map(([k,s])=>`<button class="bg" data-bg="${k}" aria-pressed="${local.bg===k}"><canvas width="280" height="210"></canvas><span>${s.n}</span></button>`).join('');
-  $('bgs').querySelectorAll('.bg').forEach(b=>{const k=b.dataset.bg,c=b.querySelector('canvas').getContext('2d');if(k==='auto'){DRAW.amanecer(c,280,210,10);c.save();c.beginPath();c.moveTo(280,0);c.lineTo(280,210);c.lineTo(0,210);c.clip();DRAW.galaxia(c,280,210,10);c.restore()}else DRAW[k](c,280,210,10)});
+  $('bgs').querySelectorAll('.bg').forEach(b=>{const k=b.dataset.bg,c=b.querySelector('canvas').getContext('2d');if(false){DRAW.amanecer(c,280,210,10);c.save();c.beginPath();c.moveTo(280,0);c.lineTo(280,210);c.lineTo(0,210);c.clip();DRAW.galaxia(c,280,210,10);c.restore()}else DRAW[k](c,280,210,10)});
 }
 $('bgs').onclick=e=>{const b=e.target.closest('[data-bg]');if(!b)return;local.bg=b.dataset.bg;saveLocal();setScene();renderBgs()};
 
