@@ -1,10 +1,11 @@
 // Service worker de BBL: la página siempre se pide a la red primero (así se actualiza sola)
 // y funciona sin internet con la última versión guardada. También recibe los avisos.
-const CACHE = 'bbl-v2';
+const CACHE = 'bbl-v3';
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener('fetch', (e) => {
+  if (new URL(e.request.url).searchParams.has('check')) return; // revisión de versión nueva: siempre a la red
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(fetch(e.request).then((r) => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, cp)); } return r; })

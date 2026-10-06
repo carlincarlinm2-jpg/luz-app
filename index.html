@@ -154,7 +154,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
       <button class="btn" id="done">Ya la recé</button>
       <button class="btn ghost" id="other">Otra</button>
       <div class="mini">
-        <button class="ib" id="speak" aria-label="Escuchar oración"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
         <button class="ib" id="fav" aria-label="Guardar oración" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.3-9A5.2 5.2 0 0 1 12 6.3 5.2 5.2 0 0 1 21.3 12C19 16.5 12 21 12 21z"/></svg></button>
         <button class="ib" id="copy" aria-label="Copiar oración"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
       </div>
@@ -329,11 +328,11 @@ $('fav').onclick=()=>{const x=cur.lines.join('\n');const i=local.favs.findIndex(
 $('saved').onclick=e=>{const b=e.target.closest('[data-del]');if(!b)return;local.favs.splice(+b.dataset.del,1);saveLocal();renderSaved();renderPrayer(false)};
 $('copy').onclick=()=>{const t=cur.h+'\n\n'+cur.lines.join('\n')+'\nAmén.';navigator.clipboard.writeText(t).then(()=>toast('Oración copiada')).catch(()=>toast('No se pudo copiar'))};
 let speaking=false;
-$('speak').onclick=()=>{
+if($('speak'))$('speak').onclick=()=>{
   if(!('speechSynthesis' in window))return toast('Tu teléfono no permite leer en voz alta');
   if(speaking){speechSynthesis.cancel();speaking=false;return}
-  const u=new SpeechSynthesisUtterance(cur.lines.join('. ')+'. Amén.');u.lang='es-MX';u.rate=.88;u.pitch=1;
-  const v=speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang));u.voice=v.find(v=>/MX|US/.test(v.lang))||v[0]||null;
+  const u=new SpeechSynthesisUtterance(cur.lines.join('. ')+'. Amén.');u.lang='es-MX';u.rate=.92;u.pitch=1;
+  const v=speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang)&&!/Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley/i.test(v.name));const sc=x=>(/premium/i.test(x.name)?120:/enhanced|mejorad|natural|neural|online/i.test(x.name)?90:0)+(/Paulina|M[oó]nica|Juan|Marisol|Dalia|Jorge|Google/i.test(x.name)?30:0)+(/MX/i.test(x.lang)?15:/US/i.test(x.lang)?8:0);v.sort((a,b)=>sc(b)-sc(a));u.voice=v[0]||null;
   u.onend=()=>speaking=false;speaking=true;speechSynthesis.speak(u);
 };
 $('addForm').onsubmit=async e=>{e.preventDefault();const t=$('intIn').value.trim();if(!t)return;$('intIn').value='';
@@ -555,5 +554,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState!==
 // Al tocar un aviso se abre en el momento correcto.
 const q=new URLSearchParams(location.search).get('m');if(q==='noche'||q==='mañana'||q==='manana'){mode=q==='noche'?'noche':'mañana';render()}
 </script>
+<script src="update.js"></script>
 </body>
 </html>
