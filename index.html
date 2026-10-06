@@ -187,7 +187,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-o
 </main>
 
 <div class="ov" id="ovBg"><div class="sheet" role="dialog" aria-modal="true" aria-label="Fondos">
-  <div class="grab"></div><h3>Fondos</h3><p class="hint">"Automático" cambia solo entre amanecer y noche estrellada.</p>
+  <div class="grab"></div><h3>Fondos</h3><p class="hint">"Automático" cambia solo entre amanecer de día y galaxia de noche.</p>
   <div class="bgs" id="bgs"></div>
 </div></div>
 
@@ -435,6 +435,7 @@ function renderSet(){
 /* ============ fondos animados ============ */
 const SCENES={
  auto:{n:'Automático'},
+ galaxia:{n:'Galaxia'},
  amanecer:{n:'Amanecer'},
  montanas:{n:'Montañas'},
  mar:{n:'Mar dorado'},
@@ -443,7 +444,7 @@ const SCENES={
  aurora:{n:'Aurora'},
  luna:{n:'Luna en el lago'}
 };
-function sceneName(){return local.bg==='auto'?(mode==='mañana'?'amanecer':'estrellas'):local.bg}
+function sceneName(){return local.bg==='auto'?(mode==='mañana'?'amanecer':'galaxia'):local.bg}
 function mkStars(n,seed){const r=rnd(seed);return Array.from({length:n},()=>({x:r(),y:r()*.75,s:r()*1.4+.3,p:r()*6.28,v:.5+r()*1.5}))}
 const STARS=mkStars(260,7);
 function ridge(seed,n){const r=rnd(seed);const pts=[];let y=r();for(let i=0;i<=n;i++){y+= (r()-.5)*.35;y=Math.max(0,Math.min(1,y));pts.push(y)}return pts}
@@ -454,7 +455,16 @@ function stars(c,w,h,t,a=1){for(const s of STARS){const tw=.55+.45*Math.sin(t*s.
 function mountains(c,w,h,t,cols,base){RIDGES.forEach((pts,k)=>{c.fillStyle=cols[k];c.beginPath();c.moveTo(0,h);const top=h*(base+k*.08),amp=h*(.16-k*.03);pts.forEach((p,i)=>c.lineTo(i/(pts.length-1)*w,top+p*amp));c.lineTo(w,h);c.fill()})}
 function clouds(c,w,h,t,col,yb){for(let i=0;i<6;i++){const x=((i*0.23+t*0.004*(1+i%3*0.4))%1.4-.2)*w,y=h*(yb+((i*37)%10)/60);c.fillStyle=col;for(let j=0;j<5;j++){c.beginPath();c.ellipse(x+j*w*.035,y+Math.sin(j*1.7)*h*.008,w*.06,h*.022,0,0,7);c.fill()}}}
 let shoot=null;
+const GX=mkStars(320,41);
 const DRAW={
+ galaxia(c,w,h,t){
+  c.fillStyle=grad(c,h,[[0,'#04030f'],[.5,'#0d0a2b'],[1,'#1a0f33']]);c.fillRect(0,0,w,h);
+  [[[124,92,255],.25,.3,.6],[[70,130,255],.8,.2,.5],[[255,100,190],.6,.85,.55],[[80,220,230],.15,.75,.4]].forEach(([col,px,py,pr],k)=>{const x=w*(px+.06*Math.sin(t*.05+k*2)),y=h*(py+.05*Math.cos(t*.04+k)),r=Math.max(w,h)*pr*(1+.08*Math.sin(t*.1+k));const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},.28)`);g.addColorStop(1,`rgba(${col},0)`);c.fillStyle=g;c.fillRect(0,0,w,h)});
+  c.save();c.translate(w*.5,h*.45);c.rotate(-.6+t*.003);const mg=c.createLinearGradient(0,-h*.1,0,h*.1);mg.addColorStop(0,'rgba(200,180,255,0)');mg.addColorStop(.5,'rgba(230,215,255,.22)');mg.addColorStop(1,'rgba(200,180,255,0)');c.fillStyle=mg;c.fillRect(-w*1.5,-h*.1,w*3,h*.2);c.restore();
+  for(const s of GX){const z=s.s/1.7,sp=.8+z*9,x=(s.x*w+t*sp)%(w+4),y=(s.y/.75*h+t*sp*.35)%(h+4),tw=.5+.5*Math.sin(t*(1+z*2)+s.p);c.fillStyle=`rgba(255,255,255,${.3+tw*.65})`;c.beginPath();c.arc(x,y,.4+z*1.6,0,7);c.fill();if(z>.85){c.fillStyle=`rgba(210,200,255,${tw*.15})`;c.beginPath();c.arc(x,y,5,0,7);c.fill()}}
+  if(!shoot&&Math.random()<.006)shoot={x:Math.random()*w*.7,y:Math.random()*h*.3,l:0};
+  if(shoot){shoot.l+=.025;const L=shoot.l,x=shoot.x+L*w*.5,y=shoot.y+L*h*.25;const g=c.createLinearGradient(x,y,x-90,y-45);g.addColorStop(0,`rgba(255,255,255,${1-L})`);g.addColorStop(1,'rgba(255,255,255,0)');c.strokeStyle=g;c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.lineTo(x-90,y-45);c.stroke();if(L>=1)shoot=null}
+ },
  amanecer(c,w,h,t){
   c.fillStyle=grad(c,h,[[0,'#2b3a7a'],[.35,'#7b6bb3'],[.6,'#f29b7a'],[.78,'#ffcf8a'],[1,'#ffe9c2']]);c.fillRect(0,0,w,h);
   const sy=h*(.66-.04*Math.sin(t*.05));
@@ -527,12 +537,12 @@ function loop(ts){if(!document.hidden)DRAW[activeScene](cx,W,H,(ts-t0)/1000);req
 if(!reduce)requestAnimationFrame(loop);
 function renderBgs(){
   $('bgs').innerHTML=Object.entries(SCENES).map(([k,s])=>`<button class="bg" data-bg="${k}" aria-pressed="${local.bg===k}"><canvas width="280" height="210"></canvas><span>${s.n}</span></button>`).join('');
-  $('bgs').querySelectorAll('.bg').forEach(b=>{const k=b.dataset.bg,c=b.querySelector('canvas').getContext('2d');if(k==='auto'){DRAW.amanecer(c,280,210,10);c.save();c.beginPath();c.moveTo(280,0);c.lineTo(280,210);c.lineTo(0,210);c.clip();DRAW.estrellas(c,280,210,10);c.restore()}else DRAW[k](c,280,210,10)});
+  $('bgs').querySelectorAll('.bg').forEach(b=>{const k=b.dataset.bg,c=b.querySelector('canvas').getContext('2d');if(k==='auto'){DRAW.amanecer(c,280,210,10);c.save();c.beginPath();c.moveTo(280,0);c.lineTo(280,210);c.lineTo(0,210);c.clip();DRAW.galaxia(c,280,210,10);c.restore()}else DRAW[k](c,280,210,10)});
 }
 $('bgs').onclick=e=>{const b=e.target.closest('[data-bg]');if(!b)return;local.bg=b.dataset.bg;saveLocal();setScene();renderBgs()};
 
 /* ============ arranque y actualizaciones ============ */
-const VERSION='2.0';
+const VERSION='2.1';
 $('date').textContent=now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
 render();
 if(sb){sb.auth.getSession().then(({data})=>{if(data.session)onUser(data.session.user)});sb.auth.onAuthStateChange((ev,s)=>{if(ev==='SIGNED_OUT')onUser(null)})}
