@@ -1,6 +1,6 @@
-// Service worker de Luz Diaria: la página siempre se pide a la red primero (así se actualiza sola)
+// Service worker de BBL: la página siempre se pide a la red primero (así se actualiza sola)
 // y funciona sin internet con la última versión guardada. También recibe los avisos.
-const CACHE = 'luz-v3';
+const CACHE = 'bbl-v1';
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))); self.clients.claim(); });
@@ -11,8 +11,8 @@ self.addEventListener('fetch', (e) => {
     .catch(() => caches.match(e.request).then((h) => h || caches.match('./index.html'))));
 });
 self.addEventListener('push', (e) => {
-  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: 'Luz Diaria', body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Luz Diaria', { body: d.body || '', tag: d.tag, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: d.url || '/' } }));
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: 'BBL', body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'BBL', { body: d.body || '', tag: d.tag, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: d.url || '/' } }));
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
